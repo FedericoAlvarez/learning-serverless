@@ -1,0 +1,26 @@
+version: '1.0'
+steps:
+    check_non_master:
+        image: alpine:3.7
+        title: fail on master branch
+        commands:
+        - echo "cannot run this pipeline on non-master"
+        - exit 1
+        when:
+          branch:
+            ignore:
+            	- master
+    	    
+    setup:
+        image: alpine:3.7
+        title: generate AWS shared credentials file
+        commands:
+        - mkdir -p .aws
+        - echo -n $AWS_CREDENTIALS_FILE | base64 -d > ${PWD}/.aws/credentials
+        - cf_export AWS_SHARED_CREDENTIALS_FILE=${PWD}/.aws/credentials
+    
+    deploy:
+        image: codefresh/serverless:1.28
+        title: Deploy serverless on aws
+        commands:
+        - serverless deploy -v --aws-profile serverless-admin
